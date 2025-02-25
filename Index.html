@@ -3,15 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dateien herunterladen</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" href="download-icon.png"> <!-- Optionales Icon -->
+    <title>Bild-Download</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h2 {
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+        }
+        .image-list {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 10px -5px;
+        }
+        .image-item {
+            margin: 5px;
+        }
+        .image-item img {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>📁 Datei-Download</h1>
-        <p>Klicke auf den Button, um alle Dateien als ZIP herunterzuladen.</p>
-        <button onclick="window.location.href='download.php'">📥 Jetzt herunterladen</button>
+        <h2>Wähle Bilder zum Download aus</h2>
+        <form action="download.php" method="post">
+            <div class="image-list">
+                <!-- Hier werden die Bilder dynamisch hinzugefügt -->
+                <div class="image-item">
+                    <input type="checkbox" name="bilder[]" value="image1.jpg">
+                    <img src="downloads/image1.jpg" alt="Bild 1">
+                </div>
+                <div class="image-item">
+                    <input type="checkbox" name="bilder[]" value="image2.jpg">
+                    <img src="downloads/image2.jpg" alt="Bild 2">
+                </div>
+                <div class="image-item">
+                    <input type="checkbox" name="bilder[]" value="image3.jpg">
+                    <img src="downloads/image3.jpg" alt="Bild 3">
+                </div>
+                <!-- Füge hier weitere Bilder hinzu -->
+            </div>
+            <button type="submit" class="button">Ausgewählte Bilder herunterladen</button>
+            <button type="button" class="button" onclick="window.location.href='download.php?alle=true'">Alle Bilder herunterladen</button>
+        </form>
     </div>
 </body>
 </html>
