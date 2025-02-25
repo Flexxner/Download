@@ -3,80 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bild-Download</title>
+    <title>Bildvorschau und Download</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
+            background-color: #f4f4f4;
         }
         h2 {
-            color: #333;
+            text-align: center;
         }
-        .container {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            padding: 20px;
-            max-width: 600px;
-            margin: auto;
-        }
-        .image-list {
+        .gallery {
             display: flex;
             flex-wrap: wrap;
-            margin: 10px -5px;
+            justify-content: center;
+            margin: 20px 0;
         }
-        .image-item {
-            margin: 5px;
+        .image-container {
+            position: relative;
+            margin: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
         }
-        .image-item img {
-            width: 100px;
-            height: 100px;
-            border: 2px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
+        .image-container img {
+            max-width: 100px;
+            max-height: 100px;
+            display: block;
         }
-        .button {
-            background-color: #4CAF50;
+        .checkbox {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 5px;
+        }
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #28a745;
             color: white;
             border: none;
-            padding: 10px 15px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
-            margin-top: 20px;
         }
-        .button:hover {
-            background-color: #45a049;
+        button:hover {
+            background-color: #218838;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Wähle Bilder zum Download aus</h2>
-        <form action="download.php" method="post">
-            <div class="image-list">
-                <!-- Hier werden die Bilder dynamisch hinzugefügt -->
-                <div class="image-item">
-                    <input type="checkbox" name="bilder[]" value="image1.jpg">
-                    <img src="downloads/image1.jpg" alt="Bild 1">
-                </div>
-                <div class="image-item">
-                    <input type="checkbox" name="bilder[]" value="image2.jpg">
-                    <img src="downloads/image2.jpg" alt="Bild 2">
-                </div>
-                <div class="image-item">
-                    <input type="checkbox" name="bilder[]" value="image3.jpg">
-                    <img src="downloads/image3.jpg" alt="Bild 3">
-                </div>
-                <!-- Füge hier weitere Bilder hinzu -->
-            </div>
-            <button type="submit" class="button">Ausgewählte Bilder herunterladen</button>
-            <button type="button" class="button" onclick="window.location.href='download.php?alle=true'">Alle Bilder herunterladen</button>
-        </form>
+    <h2>Bildvorschau und Download</h2>
+    <div class="gallery" id="gallery">
+        <!-- Bilder werden hier geladen -->
     </div>
+    <button id="downloadSelected">Ausgewählte herunterladen</button>
+    <button id="downloadAll">Alle herunterladen</button>
+
+    <script>
+        const bilder = [
+            'downloads/bild1.jpg',
+            'downloads/bild2.jpg',
+            'downloads/bild3.jpg'
+            // Füge hier die Pfade zu weiteren Bildern hinzu
+        ];
+
+        const gallery = document.getElementById('gallery');
+
+        bilder.forEach((bild) => {
+            const container = document.createElement('div');
+            container.className = 'image-container';
+
+            const img = document.createElement('img');
+            img.src = bild;
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'checkbox';
+            checkbox.value = bild;
+
+            container.appendChild(img);
+            container.appendChild(checkbox);
+            gallery.appendChild(container);
+        });
+
+        document.getElementById('downloadSelected').onclick = function() {
+            const selected = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
+            if (selected.length > 0) {
+                const zip = new JSZip();
+                const promises = [];
+                
+                selected.forEach((file) => {
+                    promises.push(
+                        fetch(file)
+                            .then(response => response.blob())
+                            .then(blob => {
+                                zip.file(file.split('/').pop(), blob);
+                            })
+                    );
+                });
+
+                Promise.all(promises).then(() => {
+                    zip.generateAsync({ type: 'blob' }).then((content) => {
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(content);
+                        link.download = 'ausgewählte_bilder.zip';
+                        link.click();
+                    });
+                });
+            } else {
+                alert('Bitte wählen Sie mindestens ein Bild aus.');
+            }
+        };
+
+        document.getElementById('downloadAll').onclick = function() {
+            const zip = new JSZip();
+            const promises = [];
+
+            bilder.forEach((file) => {
+                promises.push(
+                    fetch(file)
+                        .then(response => response.blob())
+                        .then(blob => {
+                            zip.file(file.split('/').pop(), blob);
+                        })
+                );
+            });
+
+            Promise.all(promises).then(() => {
+                zip.generateAsync({ type: 'blob' }).then((content) => {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(content);
+                    link.download = 'alle_bilder.zip';
+                    link.click();
+                });
+            });
+        };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </body>
 </html>
