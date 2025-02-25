@@ -54,32 +54,23 @@
 </head>
 <body>
     <h2>Bilder Galerie</h2>
-    <div class="gallery" id="gallery"></div>
+    <div class="gallery" id="gallery">
+        <?php
+            $ordner = 'downloads'; // Pfad zum Ordner mit den Bildern
+            $bilder = glob($ordner . '/*.jpg'); // Alle .jpg-Dateien im Ordner abrufen
+            
+            foreach ($bilder as $bild) {
+                echo '<img src="' . $bild . '" alt="' . basename($bild) . '" onclick="toggleSelection(this)" data-selected="false">';
+            }
+        ?>
+    </div>
     <div class="button-container">
         <button onclick="downloadSelected()">Ausgewählte Bilder herunterladen</button>
         <button onclick="downloadAll()">Alle Bilder herunterladen</button>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script>
-        const images = [
-            'downloads/image1.jpg',
-            'downloads/image2.jpg',
-            'downloads/image3.jpg',
-            'downloads/image4.jpg',
-            // Weitere Bilder hier hinzufügen
-        ];
-
-        const gallery = document.getElementById('gallery');
-
-        images.forEach((image, index) => {
-            const img = document.createElement('img');
-            img.src = image;
-            img.alt = `Bild ${index + 1}`;
-            img.onclick = () => toggleSelection(img);
-            img.dataset.selected = 'false';
-            gallery.appendChild(img);
-        });
-
         function toggleSelection(img) {
             const isSelected = img.dataset.selected === 'true';
             img.dataset.selected = !isSelected;
@@ -87,28 +78,20 @@
         }
 
         function downloadSelected() {
-            const selectedImages = [...gallery.children].filter(img => img.dataset.selected === 'true').map(img => img.src);
+            const selectedImages = [...document.querySelectorAll('.gallery img[data-selected="true"]')].map(img => img.src);
             if (selectedImages.length > 0) {
-                const zip = new JSZip();
-                const imgPromises = selectedImages.map(src => fetch(src).then(res => res.blob()).then(blob => {
-                    const fileName = src.split('/').pop();
-                    zip.file(fileName, blob);
-                }));
-
-                Promise.all(imgPromises).then(() => {
-                    zip.generateAsync({ type: 'blob' }).then(content => {
-                        const link = document.createElement('a');
-                        link.href = URL.createObjectURL(content);
-                        link.download = 'selected_images.zip';
-                        link.click();
-                    });
-                });
+                createZip(selectedImages, 'selected_images.zip');
             } else {
                 alert('Bitte wählen Sie mindestens ein Bild aus!');
             }
         }
 
         function downloadAll() {
+            const allImages = [...document.querySelectorAll('.gallery img')].map(img => img.src);
+            createZip(allImages, 'all_images.zip');
+        }
+
+        function createZip(images, zipFileName) {
             const zip = new JSZip();
             const imgPromises = images.map(src => fetch(src).then(res => res.blob()).then(blob => {
                 const fileName = src.split('/').pop();
@@ -119,12 +102,11 @@
                 zip.generateAsync({ type: 'blob' }).then(content => {
                     const link = document.createElement('a');
                     link.href = URL.createObjectURL(content);
-                    link.download = 'all_images.zip';
+                    link.download = zipFileName;
                     link.click();
                 });
             });
         }
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </body>
 </html>
