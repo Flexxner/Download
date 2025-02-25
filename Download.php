@@ -1,24 +1,27 @@
 <?php
-$ordner = 'downloads'; // Der Ordner mit den Dateien
-$zipDatei = 'downloads.zip';
+$ordner = 'downloads'; // Ordner mit den Bildern
+$zipDatei = 'bilder.zip';
 
 $zip = new ZipArchive;
 if ($zip->open($zipDatei, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
-    $dateien = scandir($ordner);
-    foreach ($dateien as $datei) {
-        if ($datei != "." && $datei != "..") {
+    if (isset($_POST['bilder'])) {
+        foreach ($_POST['bilder'] as $datei) {
             $zip->addFile($ordner . '/' . $datei, $datei);
+        }
+    } elseif (isset($_GET['alle'])) {
+        $dateien = scandir($ordner);
+        foreach ($dateien as $datei) {
+            if ($datei != "." && $datei != "..") {
+                $zip->addFile($ordner . '/' . $datei, $datei);
+            }
         }
     }
     $zip->close();
 }
 
-// iPhone-kompatible Header setzen
 header('Content-Type: application/zip');
 header('Content-Disposition: attachment; filename="' . $zipDatei . '"');
 header('Content-Length: ' . filesize($zipDatei));
-header("Pragma: no-cache");
-header("Expires: 0");
 readfile($zipDatei);
 
 // ZIP-Datei nach Download löschen
