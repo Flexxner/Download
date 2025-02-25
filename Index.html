@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bilder herunterladen</title>
+    <title>Bilder Galerie</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -18,76 +18,113 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            margin: 20px 0;
+            gap: 10px;
         }
         .gallery img {
             width: 150px;
             height: 150px;
-            margin: 10px;
+            object-fit: cover;
+            border: 2px solid #ccc;
+            border-radius: 5px;
             cursor: pointer;
-            border: 2px solid transparent;
-            transition: border-color 0.3s;
+            transition: transform 0.2s;
         }
         .gallery img:hover {
+            transform: scale(1.05);
             border-color: #007BFF;
         }
-        #downloadAll {
-            display: block;
-            width: 200px;
-            margin: 20px auto;
-            padding: 10px;
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
             background-color: #007BFF;
             color: white;
-            text-align: center;
-            text-decoration: none;
+            border: none;
             border-radius: 5px;
+            cursor: pointer;
             transition: background-color 0.3s;
         }
-        #downloadAll:hover {
+        button:hover {
             background-color: #0056b3;
         }
     </style>
 </head>
 <body>
-    <h2>Bilder herunterladen</h2>
-    <div class="gallery">
-        <?php
-        $ordner = 'downloads'; // Der Ordner mit den Bildern
-        $bilder = array_diff(scandir($ordner), array('.', '..'));
-
-        foreach ($bilder as $bild) {
-            echo '<img src="' . $ordner . '/' . $bild . '" alt="' . $bild . '" onclick="toggleSelection(this)">';
-        }
-        ?>
+    <h2>Bilder Galerie</h2>
+    <div class="gallery" id="gallery"></div>
+    <div class="button-container">
+        <button onclick="downloadSelected()">Ausgewählte Bilder herunterladen</button>
+        <button onclick="downloadAll()">Alle Bilder herunterladen</button>
     </div>
-    <a href="#" id="downloadAll">Alle herunterladen</a>
 
     <script>
-        const selectedImages = new Set();
+        const images = [
+            'downloads/image1.jpg',
+            'downloads/image2.jpg',
+            'downloads/image3.jpg',
+            'downloads/image4.jpg',
+            // Weitere Bilder hier hinzufügen
+        ];
+
+        const gallery = document.getElementById('gallery');
+
+        images.forEach((image, index) => {
+            const img = document.createElement('img');
+            img.src = image;
+            img.alt = `Bild ${index + 1}`;
+            img.onclick = () => toggleSelection(img);
+            img.dataset.selected = 'false';
+            gallery.appendChild(img);
+        });
 
         function toggleSelection(img) {
-            const imgSrc = img.src;
-
-            if (selectedImages.has(imgSrc)) {
-                selectedImages.delete(imgSrc);
-                img.style.border = "2px solid transparent";
-            } else {
-                selectedImages.add(imgSrc);
-                img.style.border = "2px solid #007BFF";
-            }
-            updateDownloadLink();
+            const isSelected = img.dataset.selected === 'true';
+            img.dataset.selected = !isSelected;
+            img.style.border = isSelected ? '2px solid #ccc' : '2px solid #007BFF';
         }
 
-        function updateDownloadLink() {
-            const downloadLink = document.getElementById('downloadAll');
-            if (selectedImages.size > 0) {
-                downloadLink.href = 'download.php?images=' + Array.from(selectedImages).join(',');
-                downloadLink.innerText = 'Ausgewählte herunterladen';
+        function downloadSelected() {
+            const selectedImages = [...gallery.children].filter(img => img.dataset.selected === 'true').map(img => img.src);
+            if (selectedImages.length > 0) {
+                const zip = new JSZip();
+                const imgPromises = selectedImages.map(src => fetch(src).then(res => res.blob()).then(blob => {
+                    const fileName = src.split('/').pop();
+                    zip.file(fileName, blob);
+                }));
+
+                Promise.all(imgPromises).then(() => {
+                    zip.generateAsync({ type: 'blob' }).then(content => {
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(content);
+                        link.download = 'selected_images.zip';
+                        link.click();
+                    });
+                });
             } else {
-                downloadLink.href = 'download.php?images=all';
-                downloadLink.innerText = 'Alle herunterladen';
+                alert('Bitte wählen Sie mindestens ein Bild aus!');
             }
+        }
+
+        function downloadAll() {
+            const zip = new JSZip();
+            const imgPromises = images.map(src => fetch(src).then(res => res.blob()).then(blob => {
+                const fileName = src.split('/').pop();
+                zip.file(fileName, blob);
+            }));
+
+            Promise.all(imgPromises).then(() => {
+                zip.generateAsync({ type: 'blob' }).then(content => {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(content);
+                    link.download = 'all_images.zip';
+                    link.click();
+                });
+            });
         }
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </body>
 </html>
